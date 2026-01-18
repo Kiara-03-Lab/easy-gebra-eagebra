@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Algebra Calculator</title>
+    
+    <!-- KaTeX for LaTeX rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 16px;
+            padding-bottom: 32px;
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            text-align: center;
+            margin: 8px 0 16px 0;
+            color: #fff;
+        }
+        
+        /* Display Area */
+        .display {
+            background: #1a1a24;
+            border-radius: 16px;
+            padding: 20px;
+            min-height: 100px;
+            margin-bottom: 16px;
+            border: 1px solid #2a2a3a;
+        }
+        
+        .display-label {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .display-content {
+            font-size: 1.5rem;
+            min-height: 40px;
+            word-wrap: break-word;
+            color: #fff;
+        }
+        
+        .display-content .katex {
+            font-size: 1.4rem;
+        }
+        
+        .result-display {
+            background: #0f1a0f;
+            border-color: #1a3a1a;
+        }
+        
+        .result-display .display-content {
+            color: #4ade80;
+        }
+        
+        .error {
+            color: #f87171 !important;
+            font-size: 0.9rem !important;
+        }
+        
+        /* Input Toggle */
+        .input-toggle {
+            display: flex;
+            margin-bottom: 12px;
+            background: #1a1a24;
+            border-radius: 8px;
+            padding: 4px;
+        }
+        
+        .toggle-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            background: transparent;
+            color: #888;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        .toggle-btn.active {
+            background: #3b82f6;
+            color: #fff;
+        }
+        
+        /* Operation Buttons */
+        .operations {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .op-btn {
+            padding: 14px 8px;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            background: #2563eb;
+            color: #fff;
+        }
+        
+        .op-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .op-btn.secondary {
+            background: #374151;
+        }
+        
+        /* Keypad */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        
+        .key {
+            aspect-ratio: 1.2;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            background: #1f2937;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .key:active {
+            transform: scale(0.95);
+            background: #374151;
+        }
+        
+        .key.var {
+            background: #7c3aed;
+        }
+        
+        .key.op {
+            background: #0891b2;
+        }
+        
+        .key.power {
+            background: #059669;
+        }
+        
+        .key.action {
+            background: #dc2626;
+        }
+        
+        .key.wide {
+            grid-column: span 2;
+            aspect-ratio: auto;
+            padding: 16px;
+        }
+        
+        /* Field Selector */
+        .field-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .field-btn {
+            padding: 8px 16px;
+            border: 1px solid #374151;
+            border-radius: 20px;
+            background: transparent;
+            color: #9ca3af;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        
+        .field-btn.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: #fff;
+        }
+        
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #333;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Copy Button */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            background: #374151;
+            border: none;
+            border-radius: 6px;
+            color: #9ca3af;
+            cursor: pointer;
+        }
+        
+        .copy-btn:active {
+            background: #4b5563;
+        }
+        
+        .result-wrapper {
+            position: relative;
+        }
+        
+        /* Second Polynomial Input */
+        .poly2-section {
+            display: none;
+            margin-top: 12px;
+        }
+        
+        .poly2-section.show {
+            display: block;
+        }
+        
+        .poly2-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            background: #1a1a24;
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        .poly2-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📐 Algebra</h1>
+        
+        <!-- Input Display -->
+        <div class="display">
+            <div class="display-label">Input</div>
+            <div class="display-content" id="input-display">0</div>
+        </div>
+        
+        <!-- Second Polynomial (for GCD, Division) -->
+        <div class="poly2-section" id="poly2-section">
+            <div class="poly2-label">Second Polynomial</div>
+            <input type="text" class="poly2-input" id="poly2-input" placeholder="Enter second polynomial...">
+        </div>
+        
+        <!-- Result Display -->
+        <div class="result-wrapper">
+            <div class="display result-display">
+                <div class="display-label">Result</div>
+                <div class="display-content" id="result-display">—</div>
+            </div>
+            <button class="copy-btn" onclick="copyResult()">Copy LaTeX</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <span class="spinner"></span> Computing...
+        </div>
+        
+        <!-- Field Selector -->
+        <div class="field-selector">
+            <button class="field-btn active" data-field="QQ">ℚ (Rationals)</button>
+            <button class="field-btn" data-field="ZZ">ℤ (Integers)</button>
+            <button class="field-btn" data-field="Zp:2">ℤ₂</button>
+            <button class="field-btn" data-field="Zp:3">ℤ₃</button>
+            <button class="field-btn" data-field="Zp:5">ℤ₅</button>
+            <button class="field-btn" data-field="Zp:7">ℤ₇</button>
+        </div>
+        
+        <!-- Operations -->
+        <div class="operations">
+            <button class="op-btn" onclick="compute('factor')">Factor</button>
+            <button class="op-btn" onclick="compute('expand')">Expand</button>
+            <button class="op-btn" onclick="compute('gcd')">GCD</button>
+            <button class="op-btn" onclick="compute('divide')">Divide</button>
+            <button class="op-btn secondary" onclick="compute('roots')">Roots</button>
+            <button class="op-btn secondary" onclick="compute('derivative')">d/dx</button>
+            <button class="op-btn secondary" onclick="compute('simplify')">Simplify</button>
+            <button class="op-btn secondary" onclick="compute('evaluate')">Eval</button>
+        </div>
+        
+        <!-- Keypad -->
+        <div class="keypad">
+            <!-- Variables -->
+            <button class="key var" onclick="append('x')">x</button>
+            <button class="key var" onclick="append('y')">y</button>
+            <button class="key var" onclick="append('z')">z</button>
+            <button class="key action" onclick="clearInput()">C</button>
+            
+            <!-- Numbers Row 1 -->
+            <button class="key" onclick="append('7')">7</button>
+            <button class="key" onclick="append('8')">8</button>
+            <button class="key" onclick="append('9')">9</button>
+            <button class="key op" onclick="append('+')">+</button>
+            
+            <!-- Numbers Row 2 -->
+            <button class="key" onclick="append('4')">4</button>
+            <button class="key" onclick="append('5')">5</button>
+            <button class="key" onclick="append('6')">6</button>
+            <button class="key op" onclick="append('-')">−</button>
+            
+            <!-- Numbers Row 3 -->
+            <button class="key" onclick="append('1')">1</button>
+            <button class="key" onclick="append('2')">2</button>
+            <button class="key" onclick="append('3')">3</button>
+            <button class="key op" onclick="append('*')">×</button>
+            
+            <!-- Bottom Row -->
+            <button class="key" onclick="append('0')">0</button>
+            <button class="key" onclick="append('(')">(</button>
+            <button class="key" onclick="append(')')">)</button>
+            <button class="key op" onclick="append('/')">÷</button>
+            
+            <!-- Powers -->
+            <button class="key power" onclick="append('^2')">x²</button>
+            <button class="key power" onclick="append('^3')">x³</button>
+            <button class="key power" onclick="append('^')">xⁿ</button>
+            <button class="key action" onclick="backspace()">⌫</button>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentInput = '';
+        let currentField = 'QQ';
+        let lastResult = '';
+        let lastLatex = '';
+        
+        // API endpoint - change this to your deployed backend
+        const API_URL = 'http://localhost:8000';
+        
+        // DOM elements
+        const inputDisplay = document.getElementById('input-display');
+        const resultDisplay = document.getElementById('result-display');
+        const loading = document.getElementById('loading');
+        const poly2Section = document.getElementById('poly2-section');
+        const poly2Input = document.getElementById('poly2-input');
+        
+        // Field selector
+        document.querySelectorAll('.field-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.field-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentField = btn.dataset.field;
+            });
+        });
+        
+        function updateDisplay() {
+            const displayText = currentInput || '0';
+            // Try to render as LaTeX
+            try {
+                const latexInput = displayText
+                    .replace(/\*/g, ' \\cdot ')
+                    .replace(/\^(\d+)/g, '^{$1}')
+                    .replace(/\^{(\d+)}/g, '^{$1}');
+                katex.render(latexInput, inputDisplay, { throwOnError: false });
+            } catch {
+                inputDisplay.textContent = displayText;
+            }
+        }
+        
+        function append(char) {
+            currentInput += char;
+            updateDisplay();
+        }
+        
+        function backspace() {
+            currentInput = currentInput.slice(0, -1);
+            updateDisplay();
+        }
+        
+        function clearInput() {
+            currentInput = '';
+            updateDisplay();
+            resultDisplay.textContent = '—';
+            resultDisplay.classList.remove('error');
+        }
+        
+        async function compute(operation) {
+            if (!currentInput) {
+                showError('Enter a polynomial first');
+                return;
+            }
+            
+            // Check if we need second polynomial
+            if (operation === 'gcd' || operation === 'divide') {
+                poly2Section.classList.add('show');
+                if (!poly2Input.value) {
+                    poly2Input.focus();
+                    showError('Enter second polynomial below');
+                    return;
+                }
+            } else {
+                poly2Section.classList.remove('show');
+            }
+            
+            // Handle evaluate specially
+            if (operation === 'evaluate') {
+                const point = prompt('Enter value for x (e.g., 2):');
+                if (point === null) return;
+                await sendCompute(operation, { x: parseFloat(point) });
+                return;
+            }
+            
+            await sendCompute(operation);
+        }
+        
+        async function sendCompute(operation, evalPoint = null) {
+            loading.classList.add('show');
+            resultDisplay.classList.remove('error');
+            
+            const payload = {
+                poly1: currentInput.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-'),
+                operation: operation,
+                field: currentField
+            };
+            
+            if (operation === 'gcd' || operation === 'divide') {
+                payload.poly2 = poly2Input.value;
+            }
+            
+            if (evalPoint) {
+                payload.eval_point = evalPoint;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/compute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    lastLatex = data.latex;
+                    lastResult = data.plaintext;
+                    katex.render(data.latex, resultDisplay, { throwOnError: false });
+                } else {
+                    showError(data.error);
+                }
+            } catch (err) {
+                showError('Connection error. Is the server running?');
+                console.error(err);
+            } finally {
+                loading.classList.remove('show');
+            }
+        }
+        
+        function showError(msg) {
+            resultDisplay.textContent = msg;
+            resultDisplay.classList.add('error');
+        }
+        
+        function copyResult() {
+            if (lastLatex) {
+                navigator.clipboard.writeText(lastLatex).then(() => {
+                    const btn = document.querySelector('.copy-btn');
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => btn.textContent = 'Copy LaTeX', 1500);
+                });
+            }
+        }
+        
+        // Initialize
+        updateDisplay();
+    </script>
+</body>
+</html>
